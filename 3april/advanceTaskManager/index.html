@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Template</title>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+  <script src="https://www.unpkg.com/react@18.2.0/umd/react.development.js"></script>
+  <script src="https://www.unpkg.com/react-dom@18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script type="text/babel">
+    const reactRoot = ReactDOM.createRoot(document.getElementById("root"));
+    
+        
+        
+      function App(){
+          const[tasks, setTasks] = React.useState([]);
+          const [formState, setFormState] = React.useState({ title : "",
+                                                        isCompleted : false,
+                                                        assignee : ""
+
+                                                    });
+
+    
+    
+     const flag = tasks.length > 0 ? true : false; 
+
+                                                    
+      function changeHandler(event){
+            const value = event.target.type == "checkbox" ? event.target.checked :  event.target.value;
+            setFormState({...formState, [event.target.name] : value});
+        }
+        
+        
+      function submitHandler(e){
+            e.preventDefault();
+            const newTask = {...formState};
+          
+        
+          axios.post('http://localhost:3000/todos',newTask).then((res) => {
+            console.log('Task added successfully', res.data);
+          }).catch(err => console.error("There was an error!", err));
+
+          setFormState({
+          title: "",
+          completed: false,
+          assignedTo: "",
+        });
+      }
+
+      async function getTaskHandler(){
+       let data = await axios.get('http://localhost:3000/todos');
+       console.log(data.data,'todo data');
+       setTasks(data.data);
+      }
+
+       async function deleteHandler(id){
+           await axios.delete(`http://localhost:3000/todos/${id}`);
+           getTaskHandler();
+      }
+
+      async function filterHandler(){
+        console.log('incomplete');
+        let data = await axios.get('http://localhost:3000/todos');
+        let filteredTask = (data.data).filter((el) => el.isCompleted == false);
+        setTasks(filteredTask);
+      }
+
+      async function assigneeFilterHandler(e){
+        console.log('assignee');
+        let data = await axios.get('http://localhost:3000/todos');
+        console.log(data);
+        let filteredTask = (data.data).filter(el => el.assignee == e.target.value)
+        setTasks(filteredTask);
+      }
+
+      return  (
+              <>
+                  <form onSubmit={submitHandler}>
+                        <label>Title : </label>
+                        <input typt="text" name="title" placeholder="Add new task" value={formState.title} onChange={changeHandler}/>
+                        <br/>
+                        <br/>
+                        <label>isCompleted : </label>
+                        <input type="checkbox" name="isCompleted" onChange={changeHandler}/>
+                        <br/>
+                        <br/>
+                        <label>Assignee : </label>
+                        <select name="assignee" onChange={changeHandler}>
+                            <option value="">Assigned to</option>
+                            <option value="Meena">Meena</option>
+                            <option value="Saurabh">Saurabh</option>
+                            <option value="Raja">Raja</option>
+                        </select>
+                        <br/>
+                        <br/>
+                        <input type="submit"/>
+                   </form>
+                   <br/>
+                   <br/>
+                   <button onClick={getTaskHandler}>Get all tasks</button>
+                   <button onClick={filterHandler}>Show incomplete tasks</button>
+                   <select onChange={assigneeFilterHandler}>
+                            <option value="">Filter by assignee</option>
+                            <option value="Meena">Meena</option>
+                            <option value="Saurabh">Saurabh</option>
+                            <option value="Raja">Raja</option>
+                    </select>
+                   
+                   
+                   {flag ? tasks.map((el) => <div key={el.id}>
+                                          <p>Title : {el.title}</p>
+                                          <p>isCompleted : {el.isCompleted ? "True" : "False"}</p>
+                                          <p>Assignee : {el.assignee}</p>
+                                          <button type = "button" onClick={() => deleteHandler(el.id)}>Delete</button>
+                                      </div>) : ""
+                    }
+                   </>
+            );
+          }                
+        reactRoot.render(<App/>)
+    
+  </script>
+</html>
